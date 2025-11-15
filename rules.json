@@ -1,0 +1,187 @@
+{
+  "checks": [
+
+    {
+      "condition" : "issue_time > time_from",
+      "message" : "Время выпуска не может быть позднее начала работы прогноза"
+    }
+
+
+  ],
+
+  "weather_code_rules" : [
+    {
+      "code" : "+SN",
+      "conditions" : [
+        {
+          "check": "visibility <= 1500",
+          "message": "При сильном снеге видимость должна быть ≤ 1500 м"
+        },
+        {
+          "check" : "wind_speed > 20",
+          "message" : "При сильном снеге не может быть такого ветра"
+        }
+      ]
+    },
+    {
+      "code" : "FG",
+      "conditions" : [
+        {
+          "check": "visibility <= 1000",
+          "message": "При тумане видимость должна быть ≤ 1000 м"
+        }
+      ]
+    }
+  ],
+  
+  "conditions" : [
+    "visibility",
+    "wind_speed",
+    "weather",
+    "issue_time",
+    "time_from",
+    "time_to",
+    "wind_dir"
+  ],
+
+  "intensity" : [
+    {
+      "intensity" : "",
+      "description" : "Отсутсвует характеристика"
+    },
+    {
+      "intensity" : "-",
+      "description" : "Слабая"
+    },
+    {
+      "intensity" : "+",
+      "description" : "Сильная"
+    },
+    {
+      "intensity" : "VC",
+      "description" : "Вблизи"
+    }
+  ],
+
+  "descriptor" : [
+    {
+      "descriptor" : "",
+      "description" : "Отсутсвует характеристика"
+    },
+    {
+      "descriptor" : "SH",
+      "description" : "Ливневой"
+    },
+    {
+      "descriptor" : "DR",
+      "description" : "Поземок"
+    },
+    {
+      "descriptor" : "BL",
+      "description" : "Низ. метель"
+    },
+    {
+      "descriptor" : "TS",
+      "description" : "Гроза"
+    },
+    {
+      "descriptor" : "FZ",
+      "description" : "Переохл."
+    },
+    {
+      "descriptor" : "MI",
+      "description" : "Тонкий"
+    },
+    {
+      "descriptor" : "BC",
+      "description" : "Клочья"
+    },
+    {
+      "descriptor" : "PR",
+      "description" : "Частичный"
+    }
+  ],
+
+  "weather_events" : [
+    {
+      "event" : "",
+      "description" : "Отсутсвует характеристика"
+    },
+    {
+      "event" : "RA",
+      "description" : "Дождь"
+    },
+    {
+      "event" : "DZ",
+      "description" : "Морось"
+    },
+    {
+      "event" : "SN",
+      "description" : "Снег"
+    },
+    {
+      "event" : "SG",
+      "description" : "Снежные зерна"
+    },
+    {
+      "event" : "PL",
+      "description" : "Ледяная крупа"
+    },
+    {
+      "event" : "IC",
+      "description" : "Ледяные кристаллы"
+    },
+    {
+      "event" : "GR",
+      "description" : "Град"
+    },
+    {
+      "event" : "GS",
+      "description" : "Град или снежн. крупа"
+    },
+    {
+      "event" : "BR",
+      "description" : "Дымка"
+    },
+    {
+      "event" : "FG",
+      "description" : "Туман"
+    },
+    {
+      "event" : "FU",
+      "description" : "Дым"
+    },
+    {
+      "event" : "HZ",
+      "description" : "Мгла"
+    },
+    {
+      "event" : "SA",
+      "description" : "Песок"
+    },
+    {
+      "event" : "DU",
+      "description" : "Пыль"
+    },
+    {
+      "event" : "VA",
+      "description" : "Вулк. пепел"
+    },
+    {
+      "event" : "SQ",
+      "description" : "Шквал"
+    },
+    {
+      "event" : "SS",
+      "description" : "Песчаная буря"
+    },
+    {
+      "event" : "DS",
+      "description" : "Пыльн./песч. вихри"
+    },
+    {
+      "event" : "FC",
+      "description" : "Смерч"
+    }
+  ]
+}
