@@ -15,7 +15,19 @@ class MeteoTafApp:
         self.init_ui()
 
     def init_ui(self):
-        input_frame = tk.LabelFrame(root, text="Ввод данных", padx=10, pady=10)
+        self.notebook = ttk.Notebook(self.root)
+        self.notebook.pack(fill="both", expand=True)
+
+        self.main_tab = Frame(self.notebook)
+        self.notebook.add(self.main_tab, text="MAIN")
+
+        self.plus_tab = Frame(self.notebook)
+        self.notebook.add(self.plus_tab, text="+")
+
+        self.notebook.bind("<<NotebookTabChanged>>", self.on_tab_switched)
+
+
+        input_frame = tk.LabelFrame(self.main_tab, text="Ввод данных", padx=10, pady=10)
         input_frame.pack(fill="x", padx=10, pady=5)
 
         self.entries = {}
@@ -38,7 +50,7 @@ class MeteoTafApp:
             entry.grid(row=i, column=1, pady=2)
             self.entries[key] = entry
 
-        weather_frame = tk.LabelFrame(self.root, text="Явления", padx=10, pady=10)
+        weather_frame = tk.LabelFrame(self.main_tab, text="Явления", padx=10, pady=10)
         weather_frame.pack(fill="x", padx=10, pady=5)
 
         self.weather_container = Frame(weather_frame)
@@ -48,7 +60,7 @@ class MeteoTafApp:
         add_button.pack(pady=5)
         tk.Button(root, text="Проверить и сформировать TAF", command=self.process_data).pack(pady=5)
 
-        output_frame = tk.LabelFrame(root, text="TAF", padx=10, pady=10)
+        output_frame = tk.LabelFrame(self.main_tab, text="TAF", padx=10, pady=10)
         output_frame.pack(fill="both", expand=True, padx=10, pady=5)
 
         self.text_area = tk.Text(output_frame, wrap="word", height=10)
@@ -82,6 +94,92 @@ class MeteoTafApp:
 
         self.weather_rows.append((row_frame, cb_int, cb_desc, cb_event))
 
+    def on_tab_switched(self, event):
+        selected = event.widget.select()
+        tab_index = event.widget.index(selected)
+
+        if event.widget.tab(tab_index, "text") == "+":
+            self.add_group_tab()
+
+    def add_group_tab(self):
+        new_tab = Frame(self.notebook)
+        index = len(self.notebook.tabs()) - 1
+        tab_name = f"GROUP {index}"
+
+        self.notebook.insert(index, new_tab, text=tab_name)
+        self.notebook.select(new_tab)
+
+        new_tab.entries = {}
+
+        tk.Label(new_tab, text="Тип группы:").pack(anchor="w")
+        type_combo = ttk.Combobox(new_tab, values=["TEMPO", "BECMG"], state="readonly")
+        type_combo.pack(fill="x", padx=5, pady=2)
+        new_tab.entries["group_type"] = type_combo
+
+        tk.Label(new_tab, text="Время от (YYMMDDHH):").pack(anchor="w")
+        time_from = tk.Entry(new_tab)
+        time_from.pack(fill="x", padx=5, pady=2)
+        new_tab.entries["time_from"] = time_from
+
+        tk.Label(new_tab, text="Время до (YYMMDDHH):").pack(anchor="w")
+        time_to = tk.Entry(new_tab)
+        time_to.pack(fill="x", padx=5, pady=2)
+        new_tab.entries["time_to"] = time_to
+
+        tk.Label(new_tab, text="Направление ветра (°):").pack(anchor="w")
+        wind_dir = tk.Entry(new_tab)
+        wind_dir.pack(fill="x", padx=5, pady=2)
+        new_tab.entries["wind_dir"] = wind_dir
+
+        tk.Label(new_tab, text="Скорость ветра (MPS):").pack(anchor="w")
+        wind_speed = tk.Entry(new_tab)
+        wind_speed.pack(fill="x", padx=5, pady=2)
+        new_tab.entries["wind_speed"] = wind_speed
+
+        tk.Label(new_tab, text="Видимость (м):").pack(anchor="w")
+        visibility = tk.Entry(new_tab)
+        visibility.pack(fill="x", padx=5, pady=2)
+        new_tab.entries["visibility"] = visibility
+
+        tk.Label(new_tab, text="Облачность:").pack(anchor="w")
+        clouds = tk.Entry(new_tab)
+        clouds.pack(fill="x", padx=5, pady=2)
+        new_tab.entries["clouds"] = clouds
+
+        weather_frame = tk.LabelFrame(new_tab, text="Явления", padx=5, pady=5)
+        weather_frame.pack(fill="x", padx=5, pady=5)
+        new_tab.weather_rows = []
+
+        add_weather_btn = Button(weather_frame, text="Добавить явление",
+                                command=lambda nf=new_tab: self.add_weather_row(nf))
+        add_weather_btn.pack(pady=2)
+
+        Button(new_tab, text="Удалить группу",
+            command=lambda tab=new_tab: self.remove_tab(tab)).pack(pady=5)
+
+    def remove_tab(self, tab_frame):
+        tabs = list(self.notebook.tabs())
+        for i, tab_id in enumerate(tabs):
+            if self.notebook.nametowidget(tab_id) == tab_frame:
+                tabs.remove(tab_id)
+                if i == len(tabs) - 1:
+                    self.notebook.select(tabs[i-1])
+                else:
+                    self.notebook.select(tabs[i])
+                self.notebook.forget(tab_id)
+                break
+        
+        self.rename_group_tabs()
+
+    def rename_group_tabs(self):
+        tabs = list(self.notebook.tabs())
+        if len(tabs) <= 2:
+            return
+        group_index = 1
+        for tab_id in tabs[1:-1]:
+            self.notebook.tab(tab_id, text=f"GROUP {group_index}")
+            group_index += 1
+        
     def remove_weather_row(self, frame):
         frame.destroy()
         self.weather_rows = [row for row in self.weather_rows if row[0] != frame]
