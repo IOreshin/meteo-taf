@@ -4,13 +4,20 @@ from weather_validator import validate_all_data
 from taf_formatter import generate_taf
 from loader import load_rules
 
-
 class MeteoTafApp:
     def __init__(self, root):
         self.root = root
         self.root.title("meteo-taf")
 
         self.rules = load_rules()
+
+        self.weather_frames = []
+        self.weather_rows = []
+
+        self.tabs_entries = {}
+
+        self.group_counter = 1
+        self.tab_id_map = {}
 
         self.init_ui()
 
@@ -26,52 +33,67 @@ class MeteoTafApp:
 
         self.notebook.bind("<<NotebookTabChanged>>", self.on_tab_switched)
 
+        self.init_tab_ui(self.main_tab, "main", 0)
+        self.init_weather_frame(self.main_tab, 0)
 
-        input_frame = tk.LabelFrame(self.main_tab, text="Ввод данных", padx=10, pady=10)
-        input_frame.pack(fill="x", padx=10, pady=5)
-
-        self.entries = {}
-        self.weather_rows = []
-
-        fields = [
-            ("ICAO", "icao", "entry"),
-            ("Время выпуска", "issue_time", "entry"),
-            ("Время от (YYMMDDHH)", "time_from", "entry"),
-            ("Время до (YYMMDDHH)", "time_to", "entry"),
-            ("Направление ветра (°)", "wind_dir", "entry"),
-            ("Скорость ветра (MPS)", "wind_speed", "entry"),
-            ("Видимость (м)", "visibility", "entry"),
-            ("Облачность", "clouds", "entry"),
-        ]
-
-        for i, (label, key, field_type) in enumerate(fields):
-            tk.Label(input_frame, text=label, width=25, anchor="e").grid(row=i, column=0, pady=2)
-            entry = tk.Entry(input_frame, width=25)
-            entry.grid(row=i, column=1, pady=2)
-            self.entries[key] = entry
-
-        weather_frame = tk.LabelFrame(self.main_tab, text="Явления", padx=10, pady=10)
-        weather_frame.pack(fill="x", padx=10, pady=5)
-
-        self.weather_container = Frame(weather_frame)
-        self.weather_container.pack(fill="x")
-
-        add_button = Button(weather_frame, text="Добавить явление", command=self.add_weather_row)
-        add_button.pack(pady=5)
         tk.Button(root, text="Проверить и сформировать TAF", command=self.process_data).pack(pady=5)
 
-        output_frame = tk.LabelFrame(self.main_tab, text="TAF", padx=10, pady=10)
+        output_frame = tk.LabelFrame(self.root, text="TAF", padx=10, pady=10)
         output_frame.pack(fill="both", expand=True, padx=10, pady=5)
 
         self.text_area = tk.Text(output_frame, wrap="word", height=10)
         self.text_area.pack(fill="both", expand=True)
 
-    def add_weather_row(self):
+    def init_tab_ui(self, tab, tab_type : str = None, group_id : int = 0):
+        input_frame = tk.LabelFrame(tab, text="Ввод данных", padx=10, pady=10)
+        input_frame.pack(fill="x", padx=10, pady=5)
+
+        fields = [
+            ("ICAO", "icao", "entry", "main"),
+            ("Тип группы", "group_type", "combo", "group", ["TEMPO", "BECMG"]),
+            ("Время выпуска", "issue_time", "entry", "main"),
+            ("Время от (YYMMDDHH)", "time_from", "entry", None),
+            ("Время до (YYMMDDHH)", "time_to", "entry", None),
+            ("Направление ветра (°)", "wind_dir", "entry", None),
+            ("Скорость ветра (MPS)", "wind_speed", "entry", None),
+            ("Видимость (м)", "visibility", "entry", None),
+            ("Облачность", "clouds", "entry", None),
+        ]
+        self.tabs_entries[group_id] = {}
+        for i, (label, key, field_type, _tab_type, *args) in enumerate(fields):
+            if _tab_type is None or tab_type == _tab_type:
+                tk.Label(input_frame, text = label, width=25, anchor="e").grid(
+                    row=i, column=0, pady=2)
+                if field_type == "combo":
+                    widget = ttk.Combobox(input_frame, values=args[0], width=25, state="readonly")
+                else:
+                    widget = ttk.Entry(input_frame, width=25)
+                widget.grid(row=i, column=1, pady=5)
+                self.tabs_entries[group_id][key] = widget
+
+        if group_id != 0:
+            self.tabs_entries[group_id]["issue_time"] = self.tabs_entries[0]["issue_time"]
+
+
+    def init_weather_frame(self, tab, group_id):
+        weather_frame = tk.LabelFrame(tab, text="Явления", padx=10, pady=10)
+        weather_frame.pack(fill="x", padx=10, pady=5)
+
+        weather_container = Frame(weather_frame)
+        weather_container.pack(fill="x")
+
+        add_button = Button(weather_frame, text="Добавить явление",
+                            command=lambda frame = weather_container : self.add_weather_row(frame, group_id))
+        add_button.pack(pady=5)
+
+        self.tabs_entries[group_id]["weather_events"] = []
+
+    def add_weather_row(self, frame, group_id):
         intensities = [x["intensity"] for x in self.rules.get("intensity", [])]
         descriptors = [x["descriptor"] for x in self.rules.get("descriptor", [])]
         events = [x["event"] for x in self.rules.get("weather_events", [])]
 
-        row_frame = Frame(self.weather_container)
+        row_frame = Frame(frame)
         row_frame.pack(fill="x", pady=2)
 
         cb_int = ttk.Combobox(row_frame, values=intensities, width=5, state="readonly")
@@ -92,7 +114,7 @@ class MeteoTafApp:
                             command=lambda fr=row_frame: self.remove_weather_row(fr))
         remove_btn.grid(row=0, column=3, padx=2)
 
-        self.weather_rows.append((row_frame, cb_int, cb_desc, cb_event))
+        self.tabs_entries[group_id]["weather_events"].append((row_frame, cb_int, cb_desc, cb_event))
 
     def on_tab_switched(self, event):
         selected = event.widget.select()
@@ -103,62 +125,33 @@ class MeteoTafApp:
 
     def add_group_tab(self):
         new_tab = Frame(self.notebook)
-        index = len(self.notebook.tabs()) - 1
-        tab_name = f"GROUP {index}"
 
-        self.notebook.insert(index, new_tab, text=tab_name)
+        group_id = self.group_counter
+        self.group_counter += 1
+
+        tab_index = len(self.notebook.tabs()) - 1
+        tab_name = f"GROUP {tab_index}"
+
+        self.notebook.insert(tab_index, new_tab, text=tab_name)
         self.notebook.select(new_tab)
 
-        new_tab.entries = {}
+        self.tab_id_map[new_tab] = group_id
+        self.tabs_entries[group_id] = {}
 
-        tk.Label(new_tab, text="Тип группы:").pack(anchor="w")
-        type_combo = ttk.Combobox(new_tab, values=["TEMPO", "BECMG"], state="readonly")
-        type_combo.pack(fill="x", padx=5, pady=2)
-        new_tab.entries["group_type"] = type_combo
-
-        tk.Label(new_tab, text="Время от (YYMMDDHH):").pack(anchor="w")
-        time_from = tk.Entry(new_tab)
-        time_from.pack(fill="x", padx=5, pady=2)
-        new_tab.entries["time_from"] = time_from
-
-        tk.Label(new_tab, text="Время до (YYMMDDHH):").pack(anchor="w")
-        time_to = tk.Entry(new_tab)
-        time_to.pack(fill="x", padx=5, pady=2)
-        new_tab.entries["time_to"] = time_to
-
-        tk.Label(new_tab, text="Направление ветра (°):").pack(anchor="w")
-        wind_dir = tk.Entry(new_tab)
-        wind_dir.pack(fill="x", padx=5, pady=2)
-        new_tab.entries["wind_dir"] = wind_dir
-
-        tk.Label(new_tab, text="Скорость ветра (MPS):").pack(anchor="w")
-        wind_speed = tk.Entry(new_tab)
-        wind_speed.pack(fill="x", padx=5, pady=2)
-        new_tab.entries["wind_speed"] = wind_speed
-
-        tk.Label(new_tab, text="Видимость (м):").pack(anchor="w")
-        visibility = tk.Entry(new_tab)
-        visibility.pack(fill="x", padx=5, pady=2)
-        new_tab.entries["visibility"] = visibility
-
-        tk.Label(new_tab, text="Облачность:").pack(anchor="w")
-        clouds = tk.Entry(new_tab)
-        clouds.pack(fill="x", padx=5, pady=2)
-        new_tab.entries["clouds"] = clouds
-
-        weather_frame = tk.LabelFrame(new_tab, text="Явления", padx=5, pady=5)
-        weather_frame.pack(fill="x", padx=5, pady=5)
-        new_tab.weather_rows = []
-
-        add_weather_btn = Button(weather_frame, text="Добавить явление",
-                                command=lambda nf=new_tab: self.add_weather_row(nf))
-        add_weather_btn.pack(pady=2)
+        self.init_tab_ui(new_tab, "group", group_id)
+        self.init_weather_frame(new_tab, group_id)
 
         Button(new_tab, text="Удалить группу",
-            command=lambda tab=new_tab: self.remove_tab(tab)).pack(pady=5)
+            command=lambda tab=new_tab: self.remove_tab(tab)
+            ).pack(pady=8)
 
     def remove_tab(self, tab_frame):
         tabs = list(self.notebook.tabs())
+
+        group_id = self.tab_id_map.pop(tab_frame, None)
+        if group_id is not None:
+            self.tabs_entries.pop(group_id, None)
+
         for i, tab_id in enumerate(tabs):
             if self.notebook.nametowidget(tab_id) == tab_frame:
                 tabs.remove(tab_id)
@@ -182,45 +175,47 @@ class MeteoTafApp:
         
     def remove_weather_row(self, frame):
         frame.destroy()
-        self.weather_rows = [row for row in self.weather_rows if row[0] != frame]
+        # self.weather_rows = [row for row in self.weather_rows if row[0] != frame]
 
-    def collect_weather_events(self):
-        results = []
-        for frame, cb_int, cb_desc, cb_event in self.weather_rows:
+    def collect_weather_events(self, group_id):
+        events = []
+        for row in self.tabs_entries[group_id]["weather_events"]:
+            _, cb_int, cb_desc, cb_event = row
             i = cb_int.get().strip()
             d = cb_desc.get().strip()
             e = cb_event.get().strip()
             if e:
-                results.append(f"{i}{d}{e}")
-        
-        return results
+                events.append(f"{i}{d}{e}")
+        return events
 
     def process_data(self):
-        try:
-            data = {
-                "icao": self.entries["icao"].get().strip().upper(),
-                "issue_time" : self.entries["issue_time"].get().strip().upper(),
-                "time_from": self.entries["time_from"].get().strip(),
-                "time_to": self.entries["time_to"].get().strip(),
-                "wind_dir": int(self.entries["wind_dir"].get() or 0),
-                "wind_speed": int(self.entries["wind_speed"].get() or 0),
-                "visibility": int(self.entries["visibility"].get() or 0),
-                "clouds": self.entries["clouds"].get().strip().upper(),
-                "weather_events" : self.collect_weather_events(),
-            }
-        except ValueError:
-            messagebox.showerror("Ошибка", "Некорректный формат числовых значений.")
-            return
+        all_data = {}
 
-        errors = validate_all_data(data, self.rules)
-        if errors:
-            self.text_area.delete("1.0", tk.END)
-            messagebox.showwarning("Ошибки в данных", "\n".join(errors))
-            return
+        for group_id, widgets in self.tabs_entries.items():
+            data = {}
+            for key, widget in widgets.items():
+                if key == "weather_events":
+                    data[key] = self.collect_weather_events(group_id)
+                else:
+                    value = widget.get().strip() if hasattr(widget, "get") else ""
+                    if key in ("wind_dir", "wind_speed", "visibility"):
+                        value = int(value or 0)
+                    data[key] = value
+            
+            errors = validate_all_data(data, self.rules)
+            if errors:
+                messagebox.showerror(f"Ошибки в группе {group_id}", "\n".join(errors))
+                return
+            
+            all_data[group_id] = data
 
-        taf = generate_taf(data)
+        taf_output = ""
+        for group_id, data in all_data.items():
+            taf_output += generate_taf(data) + " "
+
         self.text_area.delete("1.0", tk.END)
-        self.text_area.insert(tk.END, taf)
+        self.text_area.insert(tk.END, taf_output)
+
 
 if __name__ == "__main__":
     root = tk.Tk()

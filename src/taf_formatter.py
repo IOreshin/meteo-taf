@@ -1,11 +1,29 @@
 
 def generate_taf(data):
-    weather_str = " ".join(data["weather_events"]) if data["weather_events"] else "NSW"
+    icao = data.get("icao", "")
+    issue_time = data.get("issue_time", "")
+    time_from = data.get("time_from", "")
+    time_to = data.get("time_to", "")
+    wind_dir = int(data.get("wind_dir") or 0)
+    wind_speed = int(data.get("wind_speed") or 0)
+    visibility = int(data.get("visibility") or 0)
+    clouds = data.get("clouds", "")
+    weather_events = data.get("weather_events") or []
 
-    taf = (
-        f"TAF {data['icao']} {data['issue_time']}Z "
-        f"{data['time_from']}/{data['time_to']} "
-        f"{data['wind_dir']:03d}{data['wind_speed']:02d}MPS "
-        f"{data['visibility']} {weather_str} {data['clouds']}\n"
-    )
+    weather_str = " ".join(weather_events) if weather_events else "NSW"
+
+    if not data.get("group_type"):  # MAIN
+        taf = (
+            f"TAF {icao} {issue_time}Z "
+            f"{time_from}/{time_to} "
+            f"{wind_dir:03d}{wind_speed:02d}MPS "
+            f"{visibility} {weather_str} {clouds}"
+        )
+    else:  # группа
+        taf = (
+            f"{data.get('group_type')} {time_from}/{time_to} "
+            f"{wind_dir:03d}{wind_speed:02d}MPS "
+            f"{visibility} {weather_str} {clouds}"
+        )
+
     return taf
