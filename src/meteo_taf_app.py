@@ -8,6 +8,8 @@ class MeteoTafApp:
     def __init__(self, root):
         self.root = root
         self.root.title("meteo-taf")
+        self.root.geometry("450x800")
+        self.root.resizable(False, True)
 
         self.rules = load_rules()
 
@@ -51,13 +53,12 @@ class MeteoTafApp:
         fields = [
             ("ICAO", "icao", "entry", "main"),
             ("Тип группы", "group_type", "combo", "group", ["TEMPO", "BECMG"]),
-            ("Время выпуска", "issue_time", "entry", "main"),
-            ("Время от (YYMMDDHH)", "time_from", "entry", None),
-            ("Время до (YYMMDDHH)", "time_to", "entry", None),
+            ("Время выпуска (DDHHMM)", "issue_time", "entry", "main"),
+            ("Время действия от (DDHH)", "time_from", "entry", None),
+            ("Время действия до (DDHH)", "time_to", "entry", None),
             ("Направление ветра (°)", "wind_dir", "entry", None),
             ("Скорость ветра (MPS)", "wind_speed", "entry", None),
             ("Видимость (м)", "visibility", "entry", None),
-            ("Облачность", "clouds", "entry", None),
         ]
         self.tabs_entries[group_id] = {}
         for i, (label, key, field_type, _tab_type, *args) in enumerate(fields):
@@ -70,10 +71,48 @@ class MeteoTafApp:
                     widget = ttk.Entry(input_frame, width=25)
                 widget.grid(row=i, column=1, pady=5)
                 self.tabs_entries[group_id][key] = widget
-
+        
         if group_id != 0:
             self.tabs_entries[group_id]["issue_time"] = self.tabs_entries[0]["issue_time"]
 
+        clouds_frame = tk.LabelFrame(input_frame, text="Облачность", padx=10, pady=10)
+        clouds_frame.grid(row=i+1, column=0, columnspan=2)
+        self.tabs_entries[group_id]["clouds_entries"] = []
+
+        Button(clouds_frame, text="Добавить", command=lambda frame = clouds_frame: self.add_cloud_row(frame, group_id)).grid(row=2, column=0, columnspan=3)
+
+        self.add_cloud_row(clouds_frame, group_id)
+
+
+    def add_cloud_row(self, frame, group_id):
+        len_clouds_entries = len(self.tabs_entries[group_id]["clouds_entries"])
+
+        cloud_row_frame = tk.LabelFrame(frame, text = f"Группа {len_clouds_entries+1}", pady=5, padx=5)
+        cloud_row_frame.grid(row = len_clouds_entries, column=0)
+
+        tk.Label(cloud_row_frame, text = "Облачность", width=12,anchor="n").grid(row=0, column=0, pady=2)
+        amount_cb = ttk.Combobox(cloud_row_frame, values = [a["amount"] for a in self.rules["clouds_amount"]], width=12)
+        amount_cb.grid(row=1, column=0,pady=2)
+
+        tk.Label(cloud_row_frame, text="Высота", width=12, anchor="n").grid(row=0, column=1, pady=2)
+        height_cb = ttk.Entry(cloud_row_frame, width=12)
+        height_cb.grid(row=1, column=1, pady=2)
+
+        tk.Label(cloud_row_frame, text="Тип", width=12, anchor="n").grid(row=0, column=2, pady=2)
+        type_cb = ttk.Combobox(cloud_row_frame, values = [t["type"] for t in self.rules["clouds_type"]], width=12)
+        type_cb.grid(row = 1, column= 2, pady=2)
+
+        self.tabs_entries[group_id]["clouds_entries"].append((cloud_row_frame, amount_cb, height_cb, type_cb))
+
+        if len_clouds_entries > 0:
+            Button(cloud_row_frame, text="Удалить", command=lambda frame = cloud_row_frame: self.delete_cloud_row(frame, group_id)).grid(row=0, column=3)
+
+    def delete_cloud_row(self, frame, group_id):
+        frame.destroy()
+        for entries_list in self.tabs_entries[group_id]["clouds_entries"]:
+            if frame in entries_list:
+                self.tabs_entries[group_id]["clouds_entries"].remove(entries_list)
+                break
 
     def init_weather_frame(self, tab, group_id):
         weather_frame = tk.LabelFrame(tab, text="Явления", padx=10, pady=10)
@@ -188,6 +227,21 @@ class MeteoTafApp:
                 events.append(f"{i}{d}{e}")
         return events
 
+    def collect_clouds_entries(self, group_id):
+        clouds = []
+        for row in self.tabs_entries[group_id]["clouds_entries"]:
+            _, amount, height, cloud_type = row
+            a = amount.get().strip()
+            h = height.get().strip()
+            c = cloud_type.get().strip()
+            if a:
+                clouds.append({
+                    "amount" : a,
+                    "height" : int(h),
+                    "cloud_type" : c 
+                })
+        return clouds
+
     def process_data(self):
         all_data = {}
 
@@ -196,6 +250,8 @@ class MeteoTafApp:
             for key, widget in widgets.items():
                 if key == "weather_events":
                     data[key] = self.collect_weather_events(group_id)
+                elif key == "clouds_entries":
+                    data[key] = self.collect_clouds_entries(group_id)
                 else:
                     value = widget.get().strip() if hasattr(widget, "get") else ""
                     if key in ("wind_dir", "wind_speed", "visibility"):
@@ -208,6 +264,7 @@ class MeteoTafApp:
                 return
             
             all_data[group_id] = data
+        print(all_data)
 
         taf_output = ""
         for group_id, data in all_data.items():

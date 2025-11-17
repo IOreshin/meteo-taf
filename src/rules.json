@@ -183,5 +183,47 @@
       "event" : "FC",
       "description" : "Смерч"
     }
+  ],
+
+  "clouds_amount" : [
+    {
+      "amount" : "SKC",
+      "description" : "Ясное небо"
+    },
+    {
+      "amount" : "CLR",
+      "description" : "Ясное небо"
+    },
+    {
+      "amount" : "FEW",
+      "description" : "Несколько облаков"
+    },
+    {
+      "amount" : "SCT",
+      "description" : "Рассеянные облака"
+    },
+    {
+      "amount" : "BKN",
+      "description" : "Значительная облачность"
+    },
+    {
+      "amount" : "OVN",
+      "description" : "Полная облачность"
+    }
+  ],
+
+  "clouds_type" : [
+    {
+      "type" : "",
+      "description" : "Отсутсвует характеристика"
+    },
+    {
+      "type" : "CB",
+      "description" : "Облака кучево-дождевые или кучево-кучевые"
+    },
+    {
+      "type" : "TCU",
+      "description" : "Облака кучево-дождевые или кучево-кучевые"
+    }
   ]
 }
