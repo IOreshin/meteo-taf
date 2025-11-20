@@ -9,7 +9,7 @@ def get_resource_path(filename):
         base_path = os.path.dirname(os.path.abspath(__file__))
     return os.path.join(base_path, filename)
 
-def load_rules(filename="rules.json"):
+def load_config(filename="config.json"):
     path = get_resource_path(filename)
     try:
         with open(path, "r", encoding="utf-8") as f:
