@@ -4,8 +4,11 @@
     {
       "condition" : "issue_time > time_from",
       "message" : "Время выпуска не может быть позднее начала работы прогноза"
+    },
+    {
+      "condition" : "(int(wind_gust) - 5) < wind_speed",
+      "message" : "Порыв ветра должен превышать среднюю скорость ветра на 5 м/c"
     }
-
 
   ],
 
@@ -41,7 +44,8 @@
     "issue_time",
     "time_from",
     "time_to",
-    "wind_dir"
+    "wind_dir",
+    "wind_gust"
   ],
 
   "intensity" : [

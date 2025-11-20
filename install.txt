@@ -1,0 +1,1 @@
+pyinstaller --onedir --windowed --add-data "rules.json;." meteo_taf_app.py

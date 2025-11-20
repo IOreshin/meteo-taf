@@ -58,6 +58,7 @@ class MeteoTafApp:
             ("Время действия до (DDHH)", "time_to", "entry", None),
             ("Направление ветра (°)", "wind_dir", "entry", None),
             ("Скорость ветра (MPS)", "wind_speed", "entry", None),
+            ("Порыв ветра", "wind_gust", "entry", None),
             ("Видимость (м)", "visibility", "entry", None),
         ]
         self.tabs_entries[group_id] = {}
@@ -83,7 +84,6 @@ class MeteoTafApp:
 
         self.add_cloud_row(clouds_frame, group_id)
 
-
     def add_cloud_row(self, frame, group_id):
         len_clouds_entries = len(self.tabs_entries[group_id]["clouds_entries"])
 
@@ -95,7 +95,8 @@ class MeteoTafApp:
         amount_cb.grid(row=1, column=0,pady=2)
 
         tk.Label(cloud_row_frame, text="Высота", width=12, anchor="n").grid(row=0, column=1, pady=2)
-        height_cb = ttk.Entry(cloud_row_frame, width=12)
+        # height_cb = ttk.Entry(cloud_row_frame, width=12)
+        height_cb = ttk.Combobox(cloud_row_frame, values = [f"{i:03d}" for i in range(1, 50)], width=5, state="normal")
         height_cb.grid(row=1, column=1, pady=2)
 
         tk.Label(cloud_row_frame, text="Тип", width=12, anchor="n").grid(row=0, column=2, pady=2)
@@ -237,7 +238,7 @@ class MeteoTafApp:
             if a:
                 clouds.append({
                     "amount" : a,
-                    "height" : int(h),
+                    "height" : h,
                     "cloud_type" : c 
                 })
         return clouds
@@ -264,7 +265,6 @@ class MeteoTafApp:
                 return
             
             all_data[group_id] = data
-        print(all_data)
 
         taf_output = ""
         for group_id, data in all_data.items():
