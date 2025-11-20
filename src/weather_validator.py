@@ -1,9 +1,18 @@
 
+def exists(x):
+    return x is not None and x != ""
+
+def to_int(x):
+    try:
+        return int(x)
+    except:
+        return 0
+
 def validate_data(data, rules):
     errors = []
     for rule in rules.get("checks", []):
         try:
-            if eval(rule["condition"], {}, data):
+            if eval(rule["condition"], {"exists" : exists, "to_int" : to_int}, data):
                 errors.append(rule["message"])
         except Exception as e:
             errors.append(f"Ошибка в правиле: {rule['condition']} ({e})")

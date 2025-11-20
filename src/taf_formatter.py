@@ -7,7 +7,7 @@ def generate_taf(data):
     wind_dir = int(data.get("wind_dir") or 0)
     wind_speed = int(data.get("wind_speed") or 0)
     visibility = int(data.get("visibility") or 0)
-    wind_gust = f"G{data.get("wind_gust")}" if data.get("wind_gust") != "" else ""
+    wind_gust = f"G{data.get("wind_gust")}" if data.get("wind_gust") != "" else 0
     weather_events = data.get("weather_events") or []
     clouds_entries = data.get("clouds_entries")
 

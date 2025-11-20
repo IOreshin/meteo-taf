@@ -6,7 +6,7 @@
       "message" : "Время выпуска не может быть позднее начала работы прогноза"
     },
     {
-      "condition" : "(int(wind_gust) - 5) < wind_speed",
+      "condition" : "exists(wind_gust) and (to_int(wind_gust) - 5) < wind_speed",
       "message" : "Порыв ветра должен превышать среднюю скорость ветра на 5 м/c"
     }
 
@@ -213,6 +213,10 @@
     {
       "amount" : "OVN",
       "description" : "Полная облачность"
+    },
+    {
+      "amount" : "VV",
+      "description" : ""
     }
   ],
 

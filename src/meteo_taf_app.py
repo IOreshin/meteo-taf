@@ -266,9 +266,8 @@ class MeteoTafApp:
             
             all_data[group_id] = data
 
-        taf_output = ""
-        for group_id, data in all_data.items():
-            taf_output += generate_taf(data) + " "
+        taf_output = " ".join(generate_taf(data) for data in all_data.values()) + "="
+
 
         self.text_area.delete("1.0", tk.END)
         self.text_area.insert(tk.END, taf_output)
