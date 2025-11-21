@@ -2,7 +2,7 @@
   "checks": [
 
     {
-      "condition" : "issue_time > time_from",
+      "condition" : "((int(issue_time)/100)+1) > int(time_from)",
       "message" : "Время выпуска не может быть позднее начала работы прогноза"
     },
     {

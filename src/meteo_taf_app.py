@@ -1,8 +1,9 @@
 import tkinter as tk
-from tkinter import messagebox, ttk, Frame, Button
+from tkinter import messagebox, ttk, Frame, Button, Menu
 from weather_validator import validate_all_data
 from taf_formatter import generate_taf
 from loader import load_config
+from json_editor import JsonEditor
 
 class MeteoTafApp:
     def __init__(self, root):
@@ -24,6 +25,14 @@ class MeteoTafApp:
         self.init_ui()
 
     def init_ui(self):
+        main_menu = Menu()
+        file_menu = Menu(tearoff=0)
+        file_menu.add_command(label="Редактирование условий", command=self.init_json_editor)
+        file_menu.add_command(label="Выход", command=self.close_app)
+
+        main_menu.add_cascade(label="Файл", menu=file_menu)
+        self.root.config(menu = main_menu)
+
         self.notebook = ttk.Notebook(self.root)
         self.notebook.pack(fill="both", expand=True)
 
@@ -273,6 +282,12 @@ class MeteoTafApp:
         self.text_area.delete("1.0", tk.END)
         self.text_area.insert(tk.END, taf_output)
 
+    def init_json_editor(self):
+        json_editor = JsonEditor()
+        json_editor.mainloop()
+
+    def close_app(self):
+        self.root.destroy()
 
 if __name__ == "__main__":
     root = tk.Tk()
